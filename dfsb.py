@@ -82,18 +82,18 @@ def get_neighbors(var):
     return neighbors
 
 # MCV Heuristic: Make assignment based on which variable has the least number of options
-def make_assignment(csp):
+def make_assignment(csp, assignment):
     var_assigned = 0
 
     # Figure out a list that has elements
     for keys in csp:
-        if csp[keys]:
+        if keys not in assignment and csp[keys]:
             var_assigned = keys
             break
     
     # Find the key with the smallest length
     for keys in csp:
-        if not csp[keys]:
+        if keys in assignment or not csp[keys]:
             continue
         if len(csp[keys]) < len(csp[var_assigned]):
             var_assigned = keys
@@ -104,7 +104,6 @@ def make_assignment(csp):
 def value_ordering(var, assignment, csp):
     values = {}
     neighbors = get_neighbors(var)
-
 
     for val in csp[var]:
         count = 0
@@ -124,35 +123,38 @@ def forward_check(var, assignment, csp):
         if var in pair:
             queue.appendleft(pair)
     
-    new_csp = csp
     while queue:
         x, y = queue.popleft()
         pruned_var = x if x != var else y
 
-        if new_csp[pruned_var] and assignment[var] in new_csp[pruned_var]:
-            new_csp[pruned_var].remove(assignment[var])
-            # for pair in constraints:
-            #     if pruned_var in pair:
-            #         queue.appendleft(pair)
+        if csp[pruned_var] and assignment[var] in csp[pruned_var]:
+            csp[pruned_var].remove(assignment[var])
     
-    return new_csp
-
 # *** Check forward checking function, csp is not being updated properly
+iter = [0]
 def dfs_backtracking_plus(assignment, csp):
+    iter[0] += 1
+
     if len(assignment) == no_of_variables:
         return assignment
     
-    var = make_assignment(csp)
-    print(var)
+    # Terminates after 500,000 Iterations
+    if iter[0] == 500000:
+        return None
+    
+    var = make_assignment(csp, assignment)
+    if not csp[var] or len(csp[var]) == 0:
+        return None
 
     for val in value_ordering(var, assignment, csp):
+        
         assignment[var] = val
         
         # Generate New CSP with updated vals
         new_csp = {k: v[:] if v else v for k, v in csp.items()}
         new_csp[var] = None
 
-        new_csp = forward_check(var, assignment, new_csp)
+        forward_check(var, assignment, new_csp)
         
         res = dfs_backtracking_plus(assignment, new_csp)
         if res is not None:
