@@ -118,17 +118,23 @@ def value_ordering(var, assignment, csp):
 
 # Forward Check function: propagates the change through the entire network
 def forward_check(var, assignment, csp):
-    queue = collections.deque()
-    for pair in constraints:
-        if var in pair:
-            queue.appendleft(pair)
-    
-    while queue:
-        x, y = queue.popleft()
-        pruned_var = x if x != var else y
+    neighbors = get_neighbors(var)
+    assignment_var = assignment[var]
 
-        if csp[pruned_var] and assignment[var] in csp[pruned_var]:
-            csp[pruned_var].remove(assignment[var])
+    for neighbor in neighbors:
+        if neighbor in assignment:
+            continue
+
+        if csp[neighbor] and assignment_var in csp[neighbor]:
+            # Prune from the domain of neighbors
+            csp[neighbor].remove(assignment_var)
+
+            # Early Termination
+            if len(csp[neighbor]) == 0:
+                return False
+    
+    return True
+
     
 # *** Check forward checking function, csp is not being updated properly
 iter = [0]
@@ -143,6 +149,8 @@ def dfs_backtracking_plus(assignment, csp):
         return None
     
     var = make_assignment(csp, assignment)
+
+    
     if not csp[var] or len(csp[var]) == 0:
         return None
 
@@ -154,11 +162,11 @@ def dfs_backtracking_plus(assignment, csp):
         new_csp = {k: v[:] if v else v for k, v in csp.items()}
         new_csp[var] = None
 
-        forward_check(var, assignment, new_csp)
-        
-        res = dfs_backtracking_plus(assignment, new_csp)
-        if res is not None:
-            return res
+        if forward_check(var, assignment, new_csp):
+            res = dfs_backtracking_plus(assignment, new_csp)
+            if res is not None:
+                return res
+            
         del assignment[var]
     
     return None
