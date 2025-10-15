@@ -31,7 +31,6 @@ for a, b in edges:
     neighbors[a].append(b)
     neighbors[b].append(a)
 
-
 def conflicting_vars(assign):
     # return list of variables currently in conflict
     bad = []
@@ -54,12 +53,31 @@ def min_conflict_color(var, assign):
 
 def min_conflicts_basic(max_steps=500000):
     assign = [random.randint(0, K - 1) for _ in range(N)]
+    print(assign)
     for step in range(max_steps):
         bad = conflicting_vars(assign)
         if not bad:
             return assign
         var = random.choice(bad)
         assign[var] = min_conflict_color(var, assign)
+    return None
+
+random_restart = random.randint(0, 100000)
+max_restart_steps = [500000]
+def min_conflicts_restart(max_steps=500000):
+    
+    assign = [random.randint(0, K - 1) for _ in range(N)]
+    for step in range(max_restart_steps[0]):
+        bad = conflicting_vars(assign)
+        if not bad:
+            return assign
+        
+        if random_restart == random.randint(0,100000):
+            return min_conflicts_restart()
+        
+        var = random.choice(bad)
+        assign[var] = min_conflict_color(var, assign)
+        max_restart_steps[0] -= 1
     return None
 
 
@@ -75,4 +93,10 @@ if mode == 0:
 
 # mode 1 MCRS with restart  You should implement here
 else:
-    sys.stderr.write("MODE=1 (MCLS-R) not implemented in this starter. Please implement restart logic. You can comment out this line\n")
+    solution = min_conflicts_restart()
+    with open(output_file, "w") as out:
+        if solution is None:
+            out.write("No answer.\n")
+        else:
+            for val in solution:
+                out.write(str(val) + "\n")
